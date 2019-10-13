@@ -1,2 +1,2 @@
-# DevUp2019-Test2
+# DevUp2019Test
 Demo application for Dev Up Conference
