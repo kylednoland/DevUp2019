@@ -5,16 +5,15 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/core/sdk:2.2-stretch AS build
 WORKDIR /src
-COPY ["DevUp2019Test.Web/DevUp2019Test.Web.csproj", "DevUp2019Test.Web/"]
-RUN dotnet restore "DevUp2019Test.Web/DevUp2019Test.Web.csproj"
-COPY . .
-WORKDIR "/src/DevUp2019Test.Web"
-RUN dotnet build "DevUp2019Test.Web.csproj" -c Release -o /app/build
+COPY DevUp2019Test.Web/DevUp2019Test.Web.csproj ./
+RUN dotnet restore
+COPY ./DevUp2019Test.Web ./
+RUN dotnet build -c Release -o /app
 
 FROM build AS publish
-RUN dotnet publish "DevUp2019Test.Web.csproj" -c Release -o /app/publish
+RUN dotnet publish -c Release -o /app
 
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=publish /app .
 ENTRYPOINT ["dotnet", "DevUp2019Test.Web.dll"]
