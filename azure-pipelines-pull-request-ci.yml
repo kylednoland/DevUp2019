@@ -1,0 +1,35 @@
+#Triggering a PR build is only supported by GitHub and BitBucket currently
+#Triggering for this PR build is set via branch policy in Azure Repos
+
+trigger: none
+
+name: Pull Request Build and Test
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  buildConfiguration: 'Release'
+  solution: '**/*.sln'
+  project: '$(Build.SourcesDirectory)/DevUp2019/DevUp2019/DevUp2019.Web.csproj'
+
+steps:
+- task: DotNetCoreCLI@2
+  displayName: Restore
+  inputs:
+    command: 'restore'
+    projects: '$(solution)'
+    feedsToUse: 'select'
+
+- task: DotNetCoreCLI@2
+  displayName: Build
+  inputs:
+    command: 'build'
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration)'
+
+- task: DotNetCoreCLI@2
+  displayName: Test
+  inputs:
+    command: 'test'
+    projects: '$(solution)'

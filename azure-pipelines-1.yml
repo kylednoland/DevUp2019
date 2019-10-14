@@ -1,0 +1,64 @@
+# Multi-Stage CI/CD Using Docker, Azure Container Registry, and App Service for Linux
+
+trigger:
+- master
+
+variables:
+  # Container registry service connection established during pipeline creation
+  # use your container registry service connection here (GUID formatted)
+  dockerRegistryServiceConnection: 'yourdockerserviceregistryserviceconnection'
+  imageRepository: 'devup2019'
+  # use your container registry name here
+  containerRegistry: 'yourcontainerregistry.azurecr.io'
+  dockerfilePath: '$(Build.SourcesDirectory)/DevUp2019Test.Web/Dockerfile'
+  webAppName: 'devup2019testpipeline'
+  tag: '$(Build.BuildId)'
+  vmImageName: 'ubuntu-latest'
+  environmentName: DevUp2019Test
+  azureSubscription: 'your azure subscription here'
+
+name: 'Test Multi-Stage Build and Release Pipeline'
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:  
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: $(vmImageName)
+      
+    steps:
+    - task: Docker@2
+      displayName: Build and push an image to container registry
+      inputs:
+        containerRegistry: '$(dockerRegistryServiceConnection)'
+        repository: '$(imageRepository)'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        buildContext: '$(System.DefaultWorkingDirectory)'
+        tags: '$(tag)'
+
+- stage: Deploy
+  displayName: Deploy stage
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy
+    environment: $(environmentName)
+    pool: 
+      vmImage: $(vmImageName)
+    strategy:
+      runOnce:
+        deploy:
+          steps:            
+          - task: AzureRmWebAppDeployment@4
+            inputs:
+              ConnectionType: 'AzureRM'
+              azureSubscription: $(azureSubscription)
+              appType: 'webAppContainer'
+              WebAppName: $(webAppName)
+              DockerNamespace: $(containerRegistry)
+              DockerRepository: $(imageRepository)
+              DockerImageTag: '$(Build.BuildId)'
